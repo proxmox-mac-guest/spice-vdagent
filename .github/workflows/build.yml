@@ -1,0 +1,123 @@
+name: Build spice-vdagent bottle
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Upstream vd_agent version (e.g. 0.22.1)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build x86_64 bottle
+    runs-on: macos-15
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version: $VERSION"
+
+      - name: Checkout UTM vd_agent source
+        uses: actions/checkout@v4
+        with:
+          repository: utmapp/vd_agent
+          ref: ${{ steps.version.outputs.version }}
+          path: vd_agent_source
+          submodules: recursive
+
+      - name: Install GLib (ARM64 native)
+        run: brew install glib
+
+      - name: Install GLib (x86_64 via Rosetta)
+        run: |
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || true
+          /usr/local/bin/brew install glib || true
+
+      - name: Build Xcode archive (x86_64 only)
+        run: |
+          cd vd_agent_source
+          xcodebuild archive \
+            -scheme vd_agent \
+            -archivePath vd_agent.xcarchive \
+            ARCHS="x86_64" \
+            VALID_ARCHS="x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            MACOSX_DEPLOYMENT_TARGET=10.13
+
+      - name: Verify binary architecture
+        run: |
+          echo "=== spice-vdagentd ==="
+          file vd_agent_source/vd_agent.xcarchive/Products/usr/local/bin/spice-vdagentd
+          lipo -info vd_agent_source/vd_agent.xcarchive/Products/usr/local/bin/spice-vdagentd || true
+          echo "=== spice-vdagent ==="
+          file vd_agent_source/vd_agent.xcarchive/Products/usr/local/bin/spice-vdagent
+          lipo -info vd_agent_source/vd_agent.xcarchive/Products/usr/local/bin/spice-vdagent || true
+
+      - name: Build Homebrew bottle
+        id: bottle
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          bash scripts/build-bottle.sh \
+            vd_agent_source/vd_agent.xcarchive \
+            "$VERSION" \
+            spice-vdagent
+
+          BOTTLE_FILE=$(ls spice-vdagent--*.bottle.tar.gz 2>/dev/null | head -1)
+          if [ -z "$BOTTLE_FILE" ]; then
+            echo "ERROR: No bottle file found"
+            exit 1
+          fi
+          BOTTLE_SHA256=$(shasum -a 256 "$BOTTLE_FILE" | cut -d' ' -f1)
+          echo "bottle_file=$BOTTLE_FILE" >> "$GITHUB_OUTPUT"
+          echo "bottle_sha256=$BOTTLE_SHA256" >> "$GITHUB_OUTPUT"
+          echo "Bottle: $BOTTLE_FILE"
+          echo "SHA256: $BOTTLE_SHA256"
+
+      - name: Upload bottle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spice-vdagent-bottle
+          path: ${{ steps.bottle.outputs.bottle_file }}
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: spice-vdagent-${{ steps.version.outputs.version }}
+          name: spice-vdagent ${{ steps.version.outputs.version }}
+          body: |
+            Pre-built Homebrew bottle for spice-vdagent ${{ steps.version.outputs.version }} (x86_64, macOS Sequoia).
+            Built from https://github.com/utmapp/vd_agent/tree/${{ steps.version.outputs.version }}
+
+            **Install:**
+            ```
+            brew tap proxmox-mac-guest/spice
+            brew install spice-vdagent
+            brew services start spice-vdagent
+            ```
+          files: |
+            ${{ steps.bottle.outputs.bottle_file }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Output bottle DSL
+        run: |
+          echo "=== Add this to the formula's bottle block ==="
+          echo "bottle do"
+          echo "  root_url \"https://github.com/proxmox-mac-guest/spice-vdagent/releases/download/spice-vdagent-${{ steps.version.outputs.version }}\""
+          echo "  sha256 cellar: :any_skip_relocation, sequoia_x86_64: \"${{ steps.bottle.outputs.bottle_sha256 }}\""
+          echo "end"

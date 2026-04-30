@@ -28,10 +28,10 @@ jobs:
           else
             VERSION="${GITHUB_REF_NAME#v}"
           fi
-          UPSTREAM_TAG="spice-vdagent-${VERSION}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "upstream_tag=$UPSTREAM_TAG" >> "$GITHUB_OUTPUT"
-          echo "Building version: $VERSION (upstream tag: $UPSTREAM_TAG)"
+        UPSTREAM_TAG="spice-vdagent-${VERSION}-macOS"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "upstream_tag=$UPSTREAM_TAG" >> "$GITHUB_OUTPUT"
+        echo "Building version: $VERSION (upstream tag: $UPSTREAM_TAG)"
 
       - name: Checkout UTM vd_agent source
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           repository: utmapp/vd_agent
           ref: ${{ steps.version.outputs.upstream_tag }}
           path: vd_agent_source
-          submodules: recursive
+    
 
       - name: Install GLib (ARM64 native)
         run: brew install glib
@@ -105,7 +105,7 @@ jobs:
           body: |
             Pre-built Homebrew bottle for spice-vdagent ${{ steps.version.outputs.version }} (x86_64, macOS Sequoia).
 
-            Built from https://github.com/utmapp/vd_agent/tree/spice-vdagent-${{ steps.version.outputs.version }}
+            Built from https://github.com/utmapp/vd_agent/tree/spice-vdagent-${{ steps.version.outputs.version }}-macOS
 
             **Install:**
             ```

@@ -19,24 +19,26 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
-      - name: Determine version
-        id: version
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF_NAME#v}"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building version: $VERSION"
+        - name: Determine version
+          id: version
+          run: |
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              VERSION="${{ inputs.version }}"
+            else
+              VERSION="${GITHUB_REF_NAME#v}"
+            fi
+            UPSTREAM_TAG="spice-vdagent-${VERSION}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "upstream_tag=$UPSTREAM_TAG" >> "$GITHUB_OUTPUT"
+            echo "Building version: $VERSION (upstream tag: $UPSTREAM_TAG)"
 
-      - name: Checkout UTM vd_agent source
-        uses: actions/checkout@v4
-        with:
-          repository: utmapp/vd_agent
-          ref: ${{ steps.version.outputs.version }}
-          path: vd_agent_source
-          submodules: recursive
+        - name: Checkout UTM vd_agent source
+          uses: actions/checkout@v4
+          with:
+            repository: utmapp/vd_agent
+            ref: ${{ steps.version.outputs.upstream_tag }}
+            path: vd_agent_source
+            submodules: recursive
 
       - name: Install GLib (ARM64 native)
         run: brew install glib

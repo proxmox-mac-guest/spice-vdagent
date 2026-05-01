@@ -23,7 +23,7 @@ jobs:
         id: local
         run: |
           # Fetch our own tags to see what we've already built
-          LATEST=$(curl -s https://api.github.com/repos/${{ github.repository }}/tags | jq -r '.[].name' | sed 's/^v//' | sort -V | tail -n 1)
+          LATEST=$(curl -s https://api.github.com/repos/${{ github.repository }}/tags | jq -r '.[].name' | sed -E 's/^(v|spice-vdagent-)//' | sort -V | tail -n 1)
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
           echo "Latest local version: $LATEST"
 

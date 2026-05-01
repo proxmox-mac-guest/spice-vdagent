@@ -21,11 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, macos-14, macos-15, macos-26]
+        os: [macos-14, macos-15, macos-26]
         arch: [x86_64, arm64]
-        exclude:
-          - os: macos-13
-            arch: arm64
     steps:
       - name: Checkout this repo
         uses: actions/checkout@v4
@@ -71,15 +68,10 @@ jobs:
 
       - name: Install dependencies (glib)
         run: |
-          if [ "${{ matrix.os }}" != "macos-13" ]; then
-            # Apple Silicon runners: Must install BOTH to satisfy Xcode's hardcoded lipo script
-            brew install glib || true
-            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || true
-            arch -x86_64 /usr/local/bin/brew install glib || true
-          else
-            # Intel runners
-            brew install glib || true
-          fi
+          # Must install BOTH to satisfy Xcode's hardcoded lipo script
+          brew install glib || true
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || true
+          arch -x86_64 /usr/local/bin/brew install glib || true
 
       - name: Build Xcode archive
         run: |
@@ -95,7 +87,7 @@ jobs:
       - name: Dry-run Test
         run: |
           cd vd_agent_source/vd_agent.xcarchive/Products/usr/local/bin
-          if [ "${{ matrix.arch }}" == "x86_64" ] && [ "${{ matrix.os }}" != "macos-13" ]; then
+          if [ "${{ matrix.arch }}" == "x86_64" ]; then
             arch -x86_64 ./spice-vdagentd --help || exit 1
           else
             ./spice-vdagentd --help || exit 1

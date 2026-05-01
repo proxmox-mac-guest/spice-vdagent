@@ -26,7 +26,7 @@ codesign --force --sign - \
   "${STAGING_DIR}/bin/spice-vdagent"
 
 OS_TAG="sequoia"
-BOTTLE_FILENAME="${FORMULA_NAME}--${VERSION}.${OS_TAG}.bottle.tar.gz"
+BOTTLE_FILENAME="${FORMULA_NAME}-${VERSION}.${OS_TAG}.bottle.tar.gz"
 
 echo "Creating bottle tarball: ${BOTTLE_FILENAME}"
 tar -czf "${BOTTLE_FILENAME}" -C "${STAGING_ROOT}" \

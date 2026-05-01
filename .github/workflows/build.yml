@@ -79,7 +79,7 @@ jobs:
             "$VERSION" \
             spice-vdagent
 
-          BOTTLE_FILE=$(ls spice-vdagent--*.bottle.tar.gz 2>/dev/null | head -1)
+          BOTTLE_FILE=$(ls spice-vdagent-*.bottle.tar.gz 2>/dev/null | head -1)
           if [ -z "$BOTTLE_FILE" ]; then
             echo "ERROR: No bottle file found"
             exit 1
@@ -124,7 +124,7 @@ jobs:
           echo "=== Add this to the formula's bottle block ==="
           echo "bottle do"
           echo "  root_url \"https://github.com/proxmox-mac-guest/spice-vdagent/releases/download/spice-vdagent-${{ steps.version.outputs.version }}\""
-          echo "  sha256 cellar: :any_skip_relocation, sequoia_x86_64: \"${{ steps.bottle.outputs.bottle_sha256 }}\""
+          echo "  sha256 cellar: :any_skip_relocation, sequoia: \"${{ steps.bottle.outputs.bottle_sha256 }}\""
           echo "end"
 
       - name: Update formula in tap repo
@@ -138,7 +138,7 @@ jobs:
           git clone https://x-access-token:${GH_TOKEN}@github.com/proxmox-mac-guest/homebrew-spice.git /tmp/homebrew-spice
           cd /tmp/homebrew-spice
 
-          perl -i -pe 's/sequoia_x86_64: ".*"/sequoia_x86_64: "'"${BOTTLE_SHA256}"'"/' Formula/spice-vdagent.rb
+          perl -i -pe 's/sequoia: ".*"/sequoia: "'"${BOTTLE_SHA256}"'"/' Formula/spice-vdagent.rb
           perl -i -pe 's|releases/download/spice-vdagent-.*"|releases/download/spice-vdagent-'"${VERSION}"'"|' Formula/spice-vdagent.rb
 
           git config user.name "github-actions[bot]"

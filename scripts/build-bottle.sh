@@ -29,8 +29,6 @@ OS_TAG="sequoia"
 BOTTLE_FILENAME="${FORMULA_NAME}--${VERSION}.${OS_TAG}.bottle.tar.gz"
 
 echo "Creating bottle tarball: ${BOTTLE_FILENAME}"
-echo "Staging dir: ${STAGING_DIR}"
-ls -laR "${STAGING_ROOT}"
 tar -czf "${BOTTLE_FILENAME}" -C "${STAGING_ROOT}" \
   "${FORMULA_NAME}/${VERSION}"
 

@@ -4,6 +4,7 @@ set -euo pipefail
 ARCHIVE_PATH="$1"
 VERSION="$2"
 FORMULA_NAME="$3"
+OS_TAG="$4"
 
 STAGING_ROOT="$(mktemp -d)"
 STAGING_DIR="${STAGING_ROOT}/${FORMULA_NAME}/${VERSION}"
@@ -25,7 +26,6 @@ codesign --force --sign - \
   --identifier com.redhat.spice.vdagent \
   "${STAGING_DIR}/bin/spice-vdagent"
 
-OS_TAG="sequoia"
 BOTTLE_FILENAME="${FORMULA_NAME}-${VERSION}.${OS_TAG}.bottle.tar.gz"
 
 echo "Creating bottle tarball: ${BOTTLE_FILENAME}"

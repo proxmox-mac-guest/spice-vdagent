@@ -126,3 +126,23 @@ jobs:
           echo "  root_url \"https://github.com/proxmox-mac-guest/spice-vdagent/releases/download/spice-vdagent-${{ steps.version.outputs.version }}\""
           echo "  sha256 cellar: :any_skip_relocation, sequoia_x86_64: \"${{ steps.bottle.outputs.bottle_sha256 }}\""
           echo "end"
+
+      - name: Update formula in tap repo
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BOTTLE_SHA256="${{ steps.bottle.outputs.bottle_sha256 }}"
+
+          git clone https://x-access-token:${GH_TOKEN}@github.com/proxmox-mac-guest/homebrew-spice.git /tmp/homebrew-spice
+          cd /tmp/homebrew-spice
+
+          perl -i -pe 's/sequoia_x86_64: ".*"/sequoia_x86_64: "'"${BOTTLE_SHA256}"'"/' Formula/spice-vdagent.rb
+          perl -i -pe 's|releases/download/spice-vdagent-.*"|releases/download/spice-vdagent-'"${VERSION}"'"|' Formula/spice-vdagent.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/spice-vdagent.rb
+          git diff --cached --quiet || git commit -m "spice-vdagent ${VERSION}: update bottle SHA256"
+          git push

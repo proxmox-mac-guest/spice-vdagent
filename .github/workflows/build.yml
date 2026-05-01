@@ -203,4 +203,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/spice-vdagent.rb
           git diff --cached --quiet || git commit -m "spice-vdagent ${VERSION}: update bottles and arch support"
-          git push
+          git push origin HEAD:test-matrix

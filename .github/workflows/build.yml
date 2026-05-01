@@ -103,6 +103,7 @@ jobs:
         with:
           tag_name: spice-vdagent-${{ steps.version.outputs.version }}
           name: spice-vdagent ${{ steps.version.outputs.version }}
+          prerelease: ${{ contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') || contains(steps.version.outputs.version, 'alpha') }}
           body: |
             Pre-built Homebrew bottle for spice-vdagent ${{ steps.version.outputs.version }} (x86_64, macOS Sequoia).
 

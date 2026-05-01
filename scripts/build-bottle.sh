@@ -5,7 +5,8 @@ ARCHIVE_PATH="$1"
 VERSION="$2"
 FORMULA_NAME="$3"
 
-STAGING_DIR="$(mktemp -d)/${FORMULA_NAME}/${VERSION}"
+STAGING_ROOT="$(mktemp -d)"
+STAGING_DIR="${STAGING_ROOT}/${FORMULA_NAME}/${VERSION}"
 mkdir -p "${STAGING_DIR}/bin"
 
 echo "Extracting binaries from xcarchive..."
@@ -28,10 +29,12 @@ OS_TAG="sequoia"
 BOTTLE_FILENAME="${FORMULA_NAME}--${VERSION}.${OS_TAG}.bottle.tar.gz"
 
 echo "Creating bottle tarball: ${BOTTLE_FILENAME}"
-tar -czf "${BOTTLE_FILENAME}" -C "$(dirname "${STAGING_DIR}")" \
-  "$(basename "$(dirname "${STAGING_DIR}")")/$(basename "${STAGING_DIR}")"
+echo "Staging dir: ${STAGING_DIR}"
+ls -laR "${STAGING_ROOT}"
+tar -czf "${BOTTLE_FILENAME}" -C "${STAGING_ROOT}" \
+  "${FORMULA_NAME}/${VERSION}"
 
 echo "Bottle created: ${BOTTLE_FILENAME}"
 ls -lh "${BOTTLE_FILENAME}"
 
-rm -rf "$(dirname "${STAGING_DIR}")"
+rm -rf "${STAGING_ROOT}"

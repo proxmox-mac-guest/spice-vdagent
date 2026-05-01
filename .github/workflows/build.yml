@@ -19,6 +19,7 @@ jobs:
     name: Build (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-13, macos-14, macos-15, macos-26]
         arch: [x86_64, arm64]
@@ -70,10 +71,13 @@ jobs:
 
       - name: Install dependencies (glib)
         run: |
-          if [ "${{ matrix.arch }}" == "x86_64" ] && [ "${{ matrix.os }}" != "macos-13" ]; then
+          if [ "${{ matrix.os }}" != "macos-13" ]; then
+            # Apple Silicon runners: Must install BOTH to satisfy Xcode's hardcoded lipo script
+            brew install glib || true
             arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || true
             arch -x86_64 /usr/local/bin/brew install glib || true
           else
+            # Intel runners
             brew install glib || true
           fi
 

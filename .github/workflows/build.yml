@@ -182,19 +182,18 @@ jobs:
           
           # Combine hashes into single block
           echo "bottle do" > new_bottle_block.txt
-          echo "  root_url \"https://github.com/proxmox-mac-guest/spice-vdagent/releases/download/spice-vdagent-${VERSION}\"" >> new_bottle_block.txt
-          cat artifacts/**/*.hash | grep sha256 >> new_bottle_block.txt
-          echo "end" >> new_bottle_block.txt
+          echo "    root_url \"https://github.com/proxmox-mac-guest/spice-vdagent/releases/download/spice-vdagent-${VERSION}\"" >> new_bottle_block.txt
+          cat artifacts/**/*.hash | grep sha256 | sed 's/^/    /' >> new_bottle_block.txt
+          echo "  end" >> new_bottle_block.txt
 
           git clone https://x-access-token:${GH_TOKEN}@github.com/proxmox-mac-guest/homebrew-spice.git /tmp/homebrew-spice
           cd /tmp/homebrew-spice
 
-          # Replace bottle block using awk (simpler than perl for multi-line)
-          awk '
-            /bottle do/ { found=1 }
-            !found
-            /^end/ && found { system("cat '$GITHUB_WORKSPACE'/new_bottle_block.txt"); found=0; next }
-          ' Formula/spice-vdagent.rb > Formula/spice-vdagent.rb.new && mv Formula/spice-vdagent.rb.new Formula/spice-vdagent.rb
+          # Replace bottle block using sed with a marker
+          sed -i.bak '/^  bottle do/,/^  end$/{ /^  bottle do/{ r new_bottle_block.txt
+              d
+            }; /^  end$/d
+          }' Formula/spice-vdagent.rb
 
           # Update ARCHS logic
           perl -pi -e 's/"ARCHS=x86_64",\n/"ARCHS=#{Hardware::CPU.arm? ? \"arm64\" : \"x86_64\"}",\n/g' Formula/spice-vdagent.rb
